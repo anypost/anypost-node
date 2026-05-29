@@ -38,9 +38,10 @@
   },
   "sideEffects": false,
   "scripts": {
-    "build": "tsup",
+    "sync-version": "node scripts/sync-version.mjs",
+    "build": "bun run sync-version && tsup",
     "typecheck": "tsc --noEmit",
-    "test": "bun test",
+    "test": "bun run sync-version && bun test",
     "prepublishOnly": "bun run typecheck && bun run build"
   },
   "devDependencies": {
