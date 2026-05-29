@@ -1,6 +1,8 @@
 export { Anypost, type AnypostOptions } from "./client.js";
+export { Domains } from "./resources/domains.js";
 export { Email } from "./resources/email.js";
 export { Identity } from "./resources/identity.js";
+export { Page, type ListParams, type PageResponse } from "./pagination.js";
 export { SDK_VERSION } from "./version.js";
 
 export {
@@ -38,5 +40,14 @@ export type {
   EmailSendRequest,
   SendResponse,
 } from "./types/email.js";
+
+export type {
+  DnsRecord,
+  Domain,
+  DomainCreateParams,
+  DomainTracking,
+  DomainUpdateParams,
+  VerificationFailure,
+} from "./types/domain.js";
 
 export type { WhoamiResponse } from "./types/identity.js";

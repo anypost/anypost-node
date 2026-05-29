@@ -105,6 +105,51 @@ for (const entry of result.data) {
 }
 ```
 
+## Domains
+
+Manage sending domains under `anypost.domains`. Add a domain, publish the CNAMEs it returns, then verify.
+
+```ts
+const domain = await anypost.domains.create({ name: "example.com" });
+
+for (const record of domain.dns_records) {
+  console.log(record.type, record.name, "->", record.value);
+}
+```
+
+`verify` always resolves with the current domain — a still-`pending` domain does not throw. Read `status` and `verification_failure`, and poll while DNS propagates.
+
+```ts
+const checked = await anypost.domains.verify(domain.id);
+if (checked.status !== "verified") {
+  console.log(checked.verification_failure?.code);
+}
+```
+
+`get`, `update` (tracking config only), and `delete` round out the resource:
+
+```ts
+await anypost.domains.update(domain.id, {
+  tracking: { opens_enabled: true, clicks_enabled: true, subdomain: "track" },
+});
+await anypost.domains.delete(domain.id);
+```
+
+## Pagination
+
+List endpoints return a `Page`. Read one page directly, or iterate it with `for await` to walk every page — the client fetches each one as needed.
+
+```ts
+const page = await anypost.domains.list({ limit: 50 });
+page.data;        // this page's items
+page.has_more;    // whether another page exists
+page.next_cursor; // pass as `after` to fetch it yourself
+
+for await (const domain of await anypost.domains.list()) {
+  console.log(domain.name); // every domain, across all pages
+}
+```
+
 ## Errors
 
 A failed request throws an `AnypostError` subclass. Branch on `error.type`, the stable machine-readable code, not on the HTTP status.
@@ -170,7 +215,7 @@ Per-call options (`idempotencyKey`, `headers`, `maxRetries`, `timeoutMs`, `signa
 
 ## Roadmap
 
-This release covers sending and identity. Domains, API keys, templates, webhooks, events, and suppressions, along with cursor pagination, land in subsequent releases.
+This release covers sending, identity, and domains. API keys, templates, webhooks, events, and suppressions land in subsequent releases.
 
 ## License
 

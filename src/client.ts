@@ -1,4 +1,5 @@
 import { HttpClient, type FetchLike } from "./http.js";
+import { Domains } from "./resources/domains.js";
 import { Email } from "./resources/email.js";
 import { Identity } from "./resources/identity.js";
 import type { RequestOptions } from "./types/common.js";
@@ -27,6 +28,8 @@ export interface AnypostOptions {
 export class Anypost {
   /** Send operations (`/email`, `/email/batch`). */
   readonly email: Email;
+  /** Sending-domain operations (`/domains`). */
+  readonly domains: Domains;
   private readonly identity: Identity;
 
   constructor(apiKey: string, options?: AnypostOptions);
@@ -55,6 +58,7 @@ export class Anypost {
     });
 
     this.email = new Email(http);
+    this.domains = new Domains(http);
     this.identity = new Identity(http);
   }
 
