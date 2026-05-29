@@ -1,7 +1,10 @@
 import { HttpClient, type FetchLike } from "./http.js";
+import { ApiKeys } from "./resources/api-keys.js";
 import { Domains } from "./resources/domains.js";
 import { Email } from "./resources/email.js";
 import { Identity } from "./resources/identity.js";
+import { Suppressions } from "./resources/suppressions.js";
+import { Templates } from "./resources/templates.js";
 import type { RequestOptions } from "./types/common.js";
 import type { WhoamiResponse } from "./types/identity.js";
 
@@ -30,6 +33,12 @@ export class Anypost {
   readonly email: Email;
   /** Sending-domain operations (`/domains`). */
   readonly domains: Domains;
+  /** API-key operations (`/api-keys`). */
+  readonly apiKeys: ApiKeys;
+  /** Template operations (`/templates`), including the draft/publish flow. */
+  readonly templates: Templates;
+  /** Suppression-list operations (`/suppressions`). */
+  readonly suppressions: Suppressions;
   private readonly identity: Identity;
 
   constructor(apiKey: string, options?: AnypostOptions);
@@ -59,6 +68,9 @@ export class Anypost {
 
     this.email = new Email(http);
     this.domains = new Domains(http);
+    this.apiKeys = new ApiKeys(http);
+    this.templates = new Templates(http);
+    this.suppressions = new Suppressions(http);
     this.identity = new Identity(http);
   }
 

@@ -135,6 +135,70 @@ await anypost.domains.update(domain.id, {
 await anypost.domains.delete(domain.id);
 ```
 
+## API keys
+
+Manage keys under `anypost.apiKeys`. The plaintext secret comes back only once, on `create`, as `key`:
+
+```ts
+const created = await anypost.apiKeys.create({
+  name: "Production server",
+  permissions: "send_only",
+  allowed_domains: ["example.com"],
+});
+console.log(created.key); // store now; never retrievable again
+
+await anypost.apiKeys.update(created.id, {
+  name: "Production server",
+  permissions: "full",
+});
+await anypost.apiKeys.delete(created.id);
+```
+
+`get` returns metadata only — `key_prefix`, never the secret. Permission and restriction changes take up to 5 minutes to propagate through the gateway cache.
+
+## Templates
+
+Templates use a draft/published model: edits land in a draft, and `publish` promotes it. A template can't be used for sending until it's published.
+
+```ts
+const template = await anypost.templates.create({
+  name: "Welcome email",
+  kind: "html",
+  html: "<h1>Welcome, {{ name }}</h1>",
+});
+
+await anypost.templates.updateDraft(template.id, {
+  subject: "Welcome to Acme",
+  html: "<h1>Welcome, {{ name }}</h1>",
+});
+await anypost.templates.publish(template.id);
+```
+
+`kind` is `html` or `markdown` and is immutable once set. The plain-text body is always derived server-side. `getDraft`, `deleteDraft`, `duplicate`, `get`, `update` (name only), and `delete` round out the resource. Send with a published template via `template_id` (see [Sending](#sending)).
+
+## Suppressions
+
+A suppression blocks sends to an address, scoped to a `topic`. The wildcard `*` blocks every topic; a specific topic (e.g. `marketing`) leaves transactional traffic untouched. Bounces and complaints write `*` automatically.
+
+```ts
+await anypost.suppressions.create({
+  email: "alice@example.com",
+  topic: "marketing",
+  note: "Customer requested removal",
+});
+
+const row = await anypost.suppressions.get("alice@example.com", "*");
+await anypost.suppressions.delete("alice@example.com", "marketing");
+```
+
+`list` accepts `email_contains`, `topic`, `reason`, and `origin` filters. `listForEmail` returns every row for an address across all topics; `deleteForEmail` removes them all.
+
+```ts
+for await (const s of await anypost.suppressions.list({ reason: "complaint" })) {
+  console.log(s.email, s.topic, s.suppressed_at);
+}
+```
+
 ## Pagination
 
 List endpoints return a `Page`. Read one page directly, or iterate it with `for await` to walk every page — the client fetches each one as needed.
@@ -215,7 +279,7 @@ Per-call options (`idempotencyKey`, `headers`, `maxRetries`, `timeoutMs`, `signa
 
 ## Roadmap
 
-This release covers sending, identity, and domains. API keys, templates, webhooks, events, and suppressions land in subsequent releases.
+This release covers sending, identity, domains, API keys, templates, and suppressions. Webhooks and events land in subsequent releases.
 
 ## License
 
