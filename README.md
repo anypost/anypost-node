@@ -199,6 +199,68 @@ for await (const s of await anypost.suppressions.list({ reason: "complaint" })) 
 }
 ```
 
+## Webhooks
+
+Manage webhook subscriptions under `anypost.webhooks`. The `signing_secret` comes back only once, on `create`; later reads return only `signing_secret_prefix`.
+
+```ts
+const webhook = await anypost.webhooks.create({
+  name: "Production events",
+  url: "https://hooks.example.com/anypost",
+  events: ["email.delivered", "email.bounced", "email.complained"],
+});
+console.log(webhook.signing_secret); // store now; never retrievable again
+```
+
+`update` (PATCH) sets the name, URL, events, and `status` together — set `status` to `"disabled"` to pause delivery, `"active"` to resume. `test` sends one synthetic `webhook.test` event and resolves with the outcome even when the endpoint fails. `rotateSecret` issues a new secret and keeps the previous one valid for a 24-hour grace window; `get`, `list`, and `delete` round out the resource.
+
+```ts
+const result = await anypost.webhooks.test(webhook.id);
+if (!result.delivered) console.error(result.status_code, result.error);
+
+const rotated = await anypost.webhooks.rotateSecret(webhook.id);
+```
+
+### Verifying deliveries
+
+`verifyWebhookSignature` is a standalone function — it needs the signing secret, not an API key, so call it in your handler without a client. Pass the **raw** request body (the exact bytes, before JSON parsing), the `Anypost-Signature` header, and the secret. It resolves on success and throws `WebhookVerificationError` otherwise. `unwrapWebhookEvent` does the same and returns the parsed `WebhookDelivery`.
+
+```ts
+import { unwrapWebhookEvent, WebhookVerificationError } from "anypost";
+
+try {
+  const delivery = await unwrapWebhookEvent(rawBody, signatureHeader, secret);
+  for (const event of delivery.events) {
+    console.log(event.type, event.data.email_id);
+  }
+} catch (err) {
+  if (err instanceof WebhookVerificationError) {
+    // err.reason: "no_match" | "timestamp_out_of_tolerance" | ...
+    return res.status(400).end();
+  }
+  throw err;
+}
+```
+
+Reach for `verifyWebhookSignature` when something else has already parsed the body. Keep the raw bytes for the verify step — a captured `req.rawBody`, say — then use your framework's parsed object once it passes:
+
+```ts
+import { verifyWebhookSignature, WebhookVerificationError } from "anypost";
+
+app.post("/anypost", async (req, res) => {
+  try {
+    await verifyWebhookSignature(req.rawBody, req.header("Anypost-Signature"), secret);
+  } catch (err) {
+    if (err instanceof WebhookVerificationError) return res.status(400).end();
+    throw err;
+  }
+  for (const event of req.body.events) handle(event); // req.body is already parsed
+  res.status(204).end();
+});
+```
+
+Deliveries older than five minutes are rejected by default to bound replay; pass `toleranceSeconds` to widen, narrow, or disable that check. During a secret rotation the header carries a `v1=` component per active secret, and a match on any one passes — so deliveries keep verifying while you redeploy.
+
 ## Pagination
 
 List endpoints return a `Page`. Read one page directly, or iterate it with `for await` to walk every page — the client fetches each one as needed.
@@ -279,7 +341,7 @@ Per-call options (`idempotencyKey`, `headers`, `maxRetries`, `timeoutMs`, `signa
 
 ## Roadmap
 
-This release covers sending, identity, domains, API keys, templates, and suppressions. Webhooks and events land in subsequent releases.
+This release covers sending, identity, domains, API keys, templates, suppressions, and webhooks. The events resource lands in a subsequent release.
 
 ## License
 

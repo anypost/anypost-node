@@ -5,6 +5,7 @@ import { Email } from "./resources/email.js";
 import { Identity } from "./resources/identity.js";
 import { Suppressions } from "./resources/suppressions.js";
 import { Templates } from "./resources/templates.js";
+import { Webhooks } from "./resources/webhooks.js";
 import type { RequestOptions } from "./types/common.js";
 import type { WhoamiResponse } from "./types/identity.js";
 
@@ -39,6 +40,8 @@ export class Anypost {
   readonly templates: Templates;
   /** Suppression-list operations (`/suppressions`). */
   readonly suppressions: Suppressions;
+  /** Webhook operations (`/webhooks`), including test and secret rotation. */
+  readonly webhooks: Webhooks;
   private readonly identity: Identity;
 
   constructor(apiKey: string, options?: AnypostOptions);
@@ -71,6 +74,7 @@ export class Anypost {
     this.apiKeys = new ApiKeys(http);
     this.templates = new Templates(http);
     this.suppressions = new Suppressions(http);
+    this.webhooks = new Webhooks(http);
     this.identity = new Identity(http);
   }
 

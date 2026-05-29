@@ -5,8 +5,19 @@ export { Email } from "./resources/email.js";
 export { Identity } from "./resources/identity.js";
 export { Suppressions } from "./resources/suppressions.js";
 export { Templates } from "./resources/templates.js";
+export { Webhooks } from "./resources/webhooks.js";
 export { Page, type ListParams, type PageResponse } from "./pagination.js";
 export { SDK_VERSION } from "./version.js";
+
+export {
+  verifyWebhookSignature,
+  unwrapWebhookEvent,
+  WebhookVerificationError,
+  type VerifyWebhookOptions,
+  type WebhookDelivery,
+  type WebhookDeliveryEvent,
+  type WebhookVerificationFailure,
+} from "./webhook-signature.js";
 
 export {
   AnypostError,
@@ -77,5 +88,15 @@ export type {
   SuppressionOrigin,
   SuppressionReason,
 } from "./types/suppression.js";
+
+export type {
+  Webhook,
+  WebhookCreateParams,
+  WebhookEventType,
+  WebhookStatus,
+  WebhookTestResult,
+  WebhookUpdateParams,
+  WebhookWithSecret,
+} from "./types/webhook.js";
 
 export type { WhoamiResponse } from "./types/identity.js";
