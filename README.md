@@ -261,6 +261,34 @@ app.post("/anypost", async (req, res) => {
 
 Deliveries older than five minutes are rejected by default to bound replay; pass `toleranceSeconds` to widen, narrow, or disable that check. During a secret rotation the header carries a `v1=` component per active secret, and a match on any one passes — so deliveries keep verifying while you redeploy.
 
+## Events
+
+`anypost.events.list` pages the team's event stream under `anypost.events`, newest-first. The window defaults to the last 24 hours and is clamped to your plan's retention. Events are read-only and not addressable by id — there is no `get`.
+
+```ts
+for await (const event of await anypost.events.list({ event_type: "email.bounced" })) {
+  console.log(event.occurred_at, event.recipient, event.bounce_classification);
+}
+```
+
+Filter by `start`, `end`, `event_type`, `recipient`, `email_id`, `message_id`, `domain`, `topic`, `campaign`, `template_id`, and `tags`. All filters are exact-match, except `tags`, which takes a `string[]` and matches an event carrying *any* of the given tags. A filter value that matches no row returns an empty page. This is also how you backfill the gap after a webhook endpoint was disabled — page the events that occurred during the outage once it's healthy.
+
+```ts
+// Events tagged "onboarding" OR "welcome", that also bounced.
+const page = await anypost.events.list({
+  tags: ["onboarding", "welcome"],
+  event_type: "email.bounced",
+});
+```
+
+```ts
+const page = await anypost.events.list({
+  email_id: "email_019e1972-e87e-7000-bf74-ba09e0ed0d62",
+  limit: 100,
+});
+for (const event of page.data) console.log(event.type);
+```
+
 ## Pagination
 
 List endpoints return a `Page`. Read one page directly, or iterate it with `for await` to walk every page — the client fetches each one as needed.
@@ -338,10 +366,6 @@ new Anypost({ apiKey: "ap_your_api_key", ...options });
 | `headers` | `{}` | Extra headers sent on every request. |
 
 Per-call options (`idempotencyKey`, `headers`, `maxRetries`, `timeoutMs`, `signal`) override the client defaults for a single request.
-
-## Roadmap
-
-This release covers sending, identity, domains, API keys, templates, suppressions, and webhooks. The events resource lands in a subsequent release.
 
 ## License
 

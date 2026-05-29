@@ -2,6 +2,7 @@ import { HttpClient, type FetchLike } from "./http.js";
 import { ApiKeys } from "./resources/api-keys.js";
 import { Domains } from "./resources/domains.js";
 import { Email } from "./resources/email.js";
+import { Events } from "./resources/events.js";
 import { Identity } from "./resources/identity.js";
 import { Suppressions } from "./resources/suppressions.js";
 import { Templates } from "./resources/templates.js";
@@ -42,6 +43,8 @@ export class Anypost {
   readonly suppressions: Suppressions;
   /** Webhook operations (`/webhooks`), including test and secret rotation. */
   readonly webhooks: Webhooks;
+  /** Read access to the event stream (`/events`). */
+  readonly events: Events;
   private readonly identity: Identity;
 
   constructor(apiKey: string, options?: AnypostOptions);
@@ -75,6 +78,7 @@ export class Anypost {
     this.templates = new Templates(http);
     this.suppressions = new Suppressions(http);
     this.webhooks = new Webhooks(http);
+    this.events = new Events(http);
     this.identity = new Identity(http);
   }
 

@@ -2,6 +2,7 @@ export { Anypost, type AnypostOptions } from "./client.js";
 export { ApiKeys } from "./resources/api-keys.js";
 export { Domains } from "./resources/domains.js";
 export { Email } from "./resources/email.js";
+export { Events } from "./resources/events.js";
 export { Identity } from "./resources/identity.js";
 export { Suppressions } from "./resources/suppressions.js";
 export { Templates } from "./resources/templates.js";
@@ -54,6 +55,12 @@ export type {
   EmailSendRequest,
   SendResponse,
 } from "./types/email.js";
+
+export type {
+  Event,
+  EventListParams,
+  EventType,
+} from "./types/event.js";
 
 export type {
   DnsRecord,
