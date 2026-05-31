@@ -53,6 +53,59 @@ export interface EmailBatchRequest {
   emails: EmailSendRequest[];
 }
 
+/**
+ * Options forwarded to the optional `emailmd` package's `render()`. This mirrors
+ * emailmd's `RenderOptions` but is kept self-contained so the SDK's types never
+ * require emailmd to be installed. See the emailmd docs for the full `theme`
+ * shape and behavior.
+ */
+export interface MarkdownOptions {
+  /** Theme overrides (brand color, fonts, spacing, …). Merged onto the default theme. */
+  theme?: Record<string, unknown>;
+  /** Inline and collapse the output HTML. Default `false`. */
+  minify?: boolean;
+  /** Custom web fonts as `{ [family]: url }`. */
+  fonts?: Record<string, string>;
+  /** How strictly to validate the markdown. Default `"soft"`. */
+  validationLevel?: "skip" | "soft" | "strict";
+  /** Template-variable delimiters left untouched for later substitution. */
+  templateSyntax?: Array<{ prefix: string; suffix: string }>;
+  /** Strip disallowed inline styles. Requires `minify: true`. */
+  sanitizeStyles?: boolean;
+  /** Pretty-print the output HTML. Default `false`. */
+  beautify?: boolean;
+}
+
+/**
+ * Input to {@link EmailSendInput}'s content fields when sending markdown.
+ * `markdown` is rendered to `html` and `text` by the optional `emailmd` package
+ * at send time, then removed before the request. It cannot be combined with an
+ * explicit `html` or `text`.
+ */
+export interface MarkdownContent {
+  /** Markdown source, rendered to `html` + `text` via `emailmd` before sending. */
+  markdown?: string;
+  /** Options forwarded to `emailmd`'s `render()` for this message. */
+  markdownOptions?: MarkdownOptions;
+}
+
+/**
+ * Input accepted by {@link Email.send}. A wire {@link EmailSendRequest}, plus the
+ * SDK-only `markdown`/`markdownOptions` fields. Supply `markdown` instead of
+ * `html`/`text` to render with `emailmd`; the two SDK-only fields are stripped
+ * before the request.
+ */
+export interface EmailSendInput extends EmailSendRequest, MarkdownContent {}
+
+/** Batch defaults accepting the SDK-only markdown fields. `markdownOptions` here applies to every entry's markdown. */
+export type EmailBatchDefaultsInput = Omit<Partial<EmailSendInput>, "to">;
+
+/** Input accepted by {@link Email.sendBatch}. 1-100 messages, each allowing `markdown`. */
+export interface EmailBatchInput {
+  defaults?: EmailBatchDefaultsInput;
+  emails: EmailSendInput[];
+}
+
 /** Response from a successful single send (`202`). */
 export interface SendResponse {
   /** Public message identifier (`email_<uuidv7>`). */

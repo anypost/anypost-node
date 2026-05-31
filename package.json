@@ -16,7 +16,8 @@
     "email",
     "transactional-email",
     "smtp",
-    "api"
+    "api",
+    "markdown"
   ],
   "type": "module",
   "main": "./dist/index.cjs",
@@ -37,6 +38,14 @@
     "node": ">=18"
   },
   "sideEffects": false,
+  "peerDependencies": {
+    "emailmd": ">=0.3.0"
+  },
+  "peerDependenciesMeta": {
+    "emailmd": {
+      "optional": true
+    }
+  },
   "scripts": {
     "sync-version": "node scripts/sync-version.mjs",
     "build": "bun run sync-version && tsup",
@@ -47,6 +56,7 @@
   "devDependencies": {
     "@types/bun": "^1.3.14",
     "@types/node": "^25.9.1",
+    "emailmd": "^0.3.3",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   }

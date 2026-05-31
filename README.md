@@ -77,6 +77,40 @@ await anypost.email.send({
 });
 ```
 
+## Markdown
+
+Write the body in Markdown and the SDK renders it to email-safe HTML and a plain-text alternative through [`emailmd`](https://www.emailmd.dev). Pass `markdown` in place of `html`/`text`:
+
+```ts
+await anypost.email.send({
+  from: "you@yourdomain.com",
+  to: ["someone@example.com"],
+  subject: "Welcome",
+  markdown: "# Welcome\n\nThanks for signing up. [Get started](https://app.example.com).",
+});
+```
+
+`emailmd` is an optional peer dependency — install it only if you send Markdown:
+
+```bash
+npm install emailmd
+```
+
+It requires Node 20+ and does not run in edge or browser runtimes, so the rest of the SDK stays dependency-free and portable. Calling a Markdown path without `emailmd` installed throws a clear error.
+
+Pass render options (theme, fonts, validation) through `markdownOptions`, and reach the renderer directly with `renderMarkdown` to render once and reuse the result, or to read the extracted frontmatter:
+
+```ts
+import { renderMarkdown } from "anypost";
+
+const { html, text, meta } = await renderMarkdown("# Hi", {
+  theme: { brandColor: "#4f46e5" },
+});
+// meta.preheader, etc.
+```
+
+`markdown` cannot be combined with `html` or `text`. In a batch, set `markdownOptions` on `defaults` to apply one theme to every entry's render.
+
 ## Batch
 
 Send 1 to 100 independent messages in one request. `defaults` fills any field an entry omits.

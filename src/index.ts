@@ -8,6 +8,7 @@ export { Suppressions } from "./resources/suppressions.js";
 export { Templates } from "./resources/templates.js";
 export { Webhooks } from "./resources/webhooks.js";
 export { Page, type ListParams, type PageResponse } from "./pagination.js";
+export { renderMarkdown, type MarkdownRenderResult } from "./markdown.js";
 export { SDK_VERSION } from "./version.js";
 
 export {
@@ -51,8 +52,13 @@ export type {
   BatchResponse,
   BatchSummary,
   EmailBatchDefaults,
+  EmailBatchDefaultsInput,
+  EmailBatchInput,
   EmailBatchRequest,
+  EmailSendInput,
   EmailSendRequest,
+  MarkdownContent,
+  MarkdownOptions,
   SendResponse,
 } from "./types/email.js";
 

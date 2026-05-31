@@ -1,10 +1,12 @@
 import { bytesToBase64 } from "../base64.js";
 import type { HttpClient } from "../http.js";
+import { renderMarkdown } from "../markdown.js";
 import type { Attachment, RequestOptions } from "../types/common.js";
 import type {
   BatchResponse,
-  EmailBatchRequest,
-  EmailSendRequest,
+  EmailBatchInput,
+  EmailSendInput,
+  MarkdownOptions,
   SendResponse,
 } from "../types/email.js";
 
@@ -14,32 +16,49 @@ export class Email {
 
   /**
    * Send a single message. All addresses in `to`/`cc`/`bcc` share one
-   * envelope. Resolves with the queued message id; throws an
+   * envelope. Pass `markdown` instead of `html`/`text` to render with the
+   * optional `emailmd` package. Resolves with the queued message id; throws an
    * {@link AnypostError} subclass on failure.
    */
-  send(email: EmailSendRequest, options?: RequestOptions): Promise<SendResponse> {
+  async send(email: EmailSendInput, options?: RequestOptions): Promise<SendResponse> {
+    const body = encodeAttachments(await resolveContent(email));
     return this.http.request<SendResponse>({
       method: "POST",
       path: "/email",
-      body: encodeAttachments(email),
+      body,
       idempotent: true,
       ...(options ? { options } : {}),
     });
   }
 
   /**
-   * Send 1-100 independent messages in one request. A mixed-outcome batch
-   * (HTTP `207`) resolves normally — inspect each entry's `status` in
-   * `data`; it does not throw.
+   * Send 1-100 independent messages in one request. Each entry may use
+   * `markdown`; a `markdownOptions` set on `defaults` applies to every entry's
+   * render. A mixed-outcome batch (HTTP `207`) resolves normally — inspect each
+   * entry's `status` in `data`; it does not throw.
    */
-  sendBatch(
-    batch: EmailBatchRequest,
+  async sendBatch(
+    batch: EmailBatchInput,
     options?: RequestOptions,
   ): Promise<BatchResponse> {
-    const body: EmailBatchRequest = {
-      ...batch,
-      ...(batch.defaults ? { defaults: encodeAttachments(batch.defaults) } : {}),
-      emails: batch.emails.map(encodeAttachments),
+    const sharedMarkdownOptions = batch.defaults?.markdownOptions;
+    const resolvedDefaults = batch.defaults
+      ? encodeAttachments(await resolveContent(batch.defaults))
+      : undefined;
+    // Drop defaults that held only the SDK-only `markdownOptions`: nothing
+    // remains for the wire after stripping it.
+    const defaults =
+      resolvedDefaults && Object.keys(resolvedDefaults).length > 0
+        ? resolvedDefaults
+        : undefined;
+    const emails = await Promise.all(
+      batch.emails.map(async (email) =>
+        encodeAttachments(await resolveContent(email, sharedMarkdownOptions)),
+      ),
+    );
+    const body = {
+      ...(defaults ? { defaults } : {}),
+      emails,
     };
     return this.http.request<BatchResponse>({
       method: "POST",
@@ -49,6 +68,41 @@ export class Email {
       ...(options ? { options } : {}),
     });
   }
+}
+
+interface ContentInput {
+  markdown?: string;
+  markdownOptions?: MarkdownOptions;
+  html?: string;
+  text?: string;
+}
+
+/**
+ * Resolve a message's content for the wire: if it carries `markdown`, render it
+ * to `html`+`text` via `emailmd` and drop the SDK-only `markdown`/
+ * `markdownOptions` fields. `sharedOptions` (batch defaults) is merged under the
+ * message's own `markdownOptions`. A message that sets neither `markdown` is
+ * returned untouched apart from stripping a stray `markdownOptions`.
+ */
+async function resolveContent<T extends ContentInput>(
+  message: T,
+  sharedOptions?: MarkdownOptions,
+): Promise<Omit<T, "markdown" | "markdownOptions">> {
+  const { markdown, markdownOptions, ...rest } = message;
+  if (markdown === undefined) {
+    return rest as Omit<T, "markdown" | "markdownOptions">;
+  }
+  if (rest.html !== undefined || rest.text !== undefined) {
+    throw new Error(
+      "An email cannot set both `markdown` and `html`/`text`. Choose one content source.",
+    );
+  }
+  const merged: MarkdownOptions | undefined =
+    sharedOptions || markdownOptions
+      ? { ...sharedOptions, ...markdownOptions }
+      : undefined;
+  const { html, text } = await renderMarkdown(markdown, merged);
+  return { ...rest, html, text } as unknown as Omit<T, "markdown" | "markdownOptions">;
 }
 
 /**
