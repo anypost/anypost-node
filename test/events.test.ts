@@ -21,6 +21,7 @@ function event(overrides: Record<string, unknown> = {}) {
     bounce_type: null,
     bounce_classification: null,
     attempt: 1,
+    tracking: null,
     ...overrides,
   };
 }
@@ -42,6 +43,33 @@ describe("events", () => {
     const req = m.calls[0]!;
     expect(req.method).toBe("GET");
     expect(new URL(req.url).pathname).toBe("/v1/events");
+  });
+
+  test("exposes the bot label on a proxied open under tracking", async () => {
+    const m = mockFetch([
+      {
+        status: 200,
+        body: {
+          data: [
+            event({
+              type: "email.opened",
+              tracking: { bot: { source: "google", kind: "proxy" } },
+            }),
+            event({ id: "evt_human", type: "email.opened", tracking: null }),
+          ],
+          has_more: false,
+          next_cursor: null,
+        },
+      },
+    ]);
+    const anypost = new Anypost("ap_test", { fetch: m.fetch });
+
+    const page = await anypost.events.list({ event_type: "email.opened" });
+
+    expect(page.data[0]!.tracking?.bot?.source).toBe("google");
+    expect(page.data[0]!.tracking?.bot?.kind).toBe("proxy");
+    // A human open carries no bot classification.
+    expect(page.data[1]!.tracking).toBeNull();
   });
 
   test("list threads every filter into the query string", async () => {

@@ -64,7 +64,9 @@ export type {
 
 export type {
   Event,
+  EventBot,
   EventListParams,
+  EventTracking,
   EventType,
 } from "./types/event.js";
 

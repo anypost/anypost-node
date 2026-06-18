@@ -16,6 +16,28 @@ export type EventType =
   | "email.clicked";
 
 /**
+ * Bot classification for a proxied open or click. Pure-noise machine traffic
+ * (mailbox prefetchers, scanners) never becomes an event, so the only kind a
+ * customer ever sees is `proxy` — a real open whose origin is anonymized by a
+ * mailbox image proxy (Gmail, Yahoo, etc.).
+ */
+export interface EventBot {
+  /** The detected mailbox image proxy, e.g. `google`, `yahoo`, `bing`. */
+  source: string;
+  /** Always `proxy` on customer-visible events. */
+  kind: "proxy";
+}
+
+/**
+ * Tracking metadata on `email.opened` / `email.clicked` events, mirroring the
+ * webhook payload's `data.tracking`. Carries `bot` only when the interaction
+ * came from a mailbox image proxy; a human open/click has no `bot`.
+ */
+export interface EventTracking {
+  bot?: EventBot;
+}
+
+/**
  * A single email-pipeline event for the team. Every field is always present;
  * fields that don't apply to a given event type are `null` rather than absent.
  */
@@ -53,6 +75,12 @@ export interface Event {
   bounce_classification: string | null;
   /** Delivery attempt number for this recipient. `null` for non-delivery events. */
   attempt: number | null;
+  /**
+   * Tracking metadata, mirroring the webhook payload's `data.tracking`. `null`
+   * on every event except opens and clicks, and on human opens/clicks. Carries
+   * `bot` when the open/click came from a mailbox image proxy.
+   */
+  tracking: EventTracking | null;
 }
 
 /**
