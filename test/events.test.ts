@@ -17,6 +17,7 @@ function event(overrides: Record<string, unknown> = {}) {
     template_id: null,
     topic: "newsletter",
     tags: ["onboarding"],
+    ip_pool: null,
     smtp_code: 250,
     bounce_type: null,
     bounce_classification: null,
@@ -90,6 +91,7 @@ describe("events", () => {
       topic: "marketing",
       campaign: "spring_promo_2026",
       template_id: "template_019e2d74",
+      ip_pool: "marketing",
       tags: ["onboarding", "welcome"],
     });
 
@@ -106,6 +108,7 @@ describe("events", () => {
     expect(params.get("topic")).toBe("marketing");
     expect(params.get("campaign")).toBe("spring_promo_2026");
     expect(params.get("template_id")).toBe("template_019e2d74");
+    expect(params.get("ip_pool")).toBe("marketing");
   });
 
   test("omits the tags query param when the array is empty", async () => {

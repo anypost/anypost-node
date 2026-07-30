@@ -34,6 +34,17 @@ export interface EmailSendRequest {
   campaign?: string;
   /** Suppression scope / topic bucket (`[a-z0-9_.-]{1,64}`). */
   topic?: string;
+  /**
+   * Which of your dedicated IP pools this message sends from
+   * (`[a-z0-9]([a-z0-9-]*[a-z0-9])?`, <= 32 chars). Accounts with dedicated
+   * IPs and more than one named pool only. Unlike `tags`/`topic`/`campaign`
+   * this is not a reporting label — it changes how the message is delivered,
+   * keeping one stream's reputation and queueing off another's. Omit to use
+   * the account's default pool. An unrecognized name returns `422` listing
+   * the pools the account does have; mail is never quietly sent from
+   * addresses you did not pick.
+   */
+  ip_pool?: string;
   tracking?: Tracking;
   /** Handlebars substitution map. Encoded JSON must be <= 64 KB. */
   variables?: Record<string, unknown>;

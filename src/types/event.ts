@@ -67,10 +67,27 @@ export interface Event {
   topic: string | null;
   /** Customer-supplied tags from the originating send. Empty array when none. */
   tags: string[];
+  /**
+   * Which dedicated IP pool the message egressed from. `null` on sends that
+   * named no pool and on accounts without dedicated IPs. Set on every event
+   * for the message, not just `email.sent`, so bounce and complaint rates can
+   * be read per pool.
+   */
+  ip_pool: string | null;
   /** SMTP reply code observed (250 on delivery, 5xx on bounce). `null` without an SMTP exchange. */
   smtp_code: number | null;
-  /** Bounce type (e.g. `Hard`, `Soft`). Only on `email.bounced`. */
-  bounce_type: string | null;
+  /**
+   * Why the message failed. Only on `email.bounced`.
+   *
+   * - `permanent` — the receiver refused the address outright (5xx). The
+   *   address is suppressed and this is what counts against list quality.
+   * - `transient` — a temporary failure that was still unresolved when the
+   *   message was reported, e.g. an out-of-band 4xx DSN.
+   * - `expired` — the message aged out of the retry queue after 72 hours
+   *   without ever reaching the receiver. No server refused it, so it is not
+   *   a hard bounce and the address is not suppressed.
+   */
+  bounce_type: "permanent" | "transient" | "expired" | null;
   /** Bounce classification (e.g. `InvalidRecipient`). Only on `email.bounced`. */
   bounce_classification: string | null;
   /** Delivery attempt number for this recipient. `null` for non-delivery events. */
@@ -108,6 +125,14 @@ export interface EventListParams extends ListParams {
   campaign?: string;
   /** Template the originating send used. */
   template_id?: string;
+  /**
+   * Restrict to mail that egressed from this named dedicated IP pool. Exact
+   * match against the `[a-z0-9]([a-z0-9-]*[a-z0-9])?` pool-name shape; a value
+   * outside it returns an empty list rather than being ignored, so a typo
+   * cannot silently widen the answer to "all pools". Retiring a pool does not
+   * hide its history — events keep the pool they were sent with.
+   */
+  ip_pool?: string;
   /**
    * Restrict to events carrying any of these tags (`hasAny` — an event
    * matches if it has at least one of the values, not all). Up to 10; values

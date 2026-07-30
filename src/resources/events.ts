@@ -12,7 +12,7 @@ export class Events {
    * last 24 hours and is clamped to the plan's retention. Returns one
    * {@link Page}; iterate it with `for await` to walk every page. Filter with
    * `start`, `end`, `event_type`, `recipient`, `email_id`, `message_id`,
-   * `domain`, `topic`, `campaign`, and `template_id`.
+   * `domain`, `topic`, `campaign`, `template_id`, and `ip_pool`.
    */
   list(
     params?: EventListParams,
@@ -41,6 +41,7 @@ export class Events {
         topic: params?.topic,
         campaign: params?.campaign,
         template_id: params?.template_id,
+        ip_pool: params?.ip_pool,
         // Sent comma-separated (`tags=a,b`); the API matches with `hasAny`.
         tags: params?.tags?.length ? params.tags.join(",") : undefined,
       },
