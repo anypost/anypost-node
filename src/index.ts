@@ -114,4 +114,4 @@ export type {
   WebhookWithSecret,
 } from "./types/webhook.js";
 
-export type { WhoamiResponse } from "./types/identity.js";
+export type { WhoamiLimits, WhoamiResponse } from "./types/identity.js";

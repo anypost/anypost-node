@@ -5,6 +5,7 @@ import { mockFetch } from "./helpers.js";
 const WHOAMI = {
   team: { id: "team_1", name: "Acme" },
   api_key: { id: "key_1", permissions: "full" as const },
+  limits: { daily: 5000, monthly: 100000, delivery_rate_per_minute: 600 },
 };
 
 describe("Anypost client", () => {
