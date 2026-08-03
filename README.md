@@ -137,6 +137,10 @@ console.log(result.summary); // { total, queued, failed }
 for (const entry of result.data) {
   if (entry.status === "queued") {
     console.log(entry.index, entry.id);
+  } else if (entry.error.type === "quota_exceeded") {
+    // A label cap denied this entry. Narrowing on `type` reaches the denial
+    // detail, so there is no need to parse the message.
+    retryAfter(entry.index, entry.error.scope, entry.error.retry_after_seconds);
   } else {
     console.error(entry.index, entry.error.type, entry.error.message);
   }

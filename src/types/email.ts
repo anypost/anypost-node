@@ -132,14 +132,49 @@ export interface BatchItemQueued {
   created_at: string;
 }
 
+/** Which per-team label cap denied a batch entry. */
+export type BatchQuotaScope =
+  | "campaign_cardinality"
+  | "topic_cardinality"
+  | "tag_cardinality";
+
+/**
+ * Inner canonical error on a failed entry: `{ type, message }`, with no
+ * wrapping `error` key.
+ *
+ * A `quota_exceeded` entry carries the denial detail as structured fields, so
+ * narrowing on `type` reaches `scope`, `limit`, and `retry_after_seconds`
+ * without parsing `message`:
+ *
+ * ```ts
+ * if (item.status === "failed" && item.error.type === "quota_exceeded") {
+ *   parkFor(item.error.retry_after_seconds);
+ * }
+ * ```
+ */
+export type BatchItemError =
+  | {
+      type: "validation_error" | "permission_error" | "internal_error";
+      message: string;
+    }
+  | {
+      type: "quota_exceeded";
+      message: string;
+      /** Which label cap denied this entry. */
+      scope: BatchQuotaScope;
+      /** The ceiling for the named `scope`. */
+      limit: number;
+      /**
+       * Seconds until this entry's label is under its cap again. Entries in
+       * one batch may report different windows.
+       */
+      retry_after_seconds: number;
+    };
+
 export interface BatchItemFailed {
   status: "failed";
   index: number;
-  /** Inner canonical error: `{ type, message }`, no wrapping `error` key. */
-  error: {
-    type: "validation_error" | "permission_error" | "internal_error";
-    message: string;
-  };
+  error: BatchItemError;
 }
 
 /** Per-entry outcome of a batch send. Discriminated by `status`. */

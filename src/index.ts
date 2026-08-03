@@ -46,9 +46,11 @@ export type {
 } from "./types/common.js";
 
 export type {
+  BatchItemError,
   BatchItemFailed,
   BatchItemQueued,
   BatchItemResult,
+  BatchQuotaScope,
   BatchResponse,
   BatchSummary,
   EmailBatchDefaults,

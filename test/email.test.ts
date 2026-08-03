@@ -129,4 +129,44 @@ describe("email.sendBatch", () => {
     expect(res.summary).toEqual({ total: 2, queued: 1, failed: 1 });
     expect(res.data[1]!.status).toBe("failed");
   });
+
+  test("a quota_exceeded entry exposes the denial without parsing message", async () => {
+    const m = mockFetch([
+      {
+        status: 207,
+        body: {
+          summary: { total: 2, queued: 1, failed: 1 },
+          data: [
+            { status: "queued", index: 0, id: "email_1", created_at: "x" },
+            {
+              status: "failed",
+              index: 1,
+              error: {
+                type: "quota_exceeded",
+                message: "campaign_cardinality limit 200 exceeded; retry after 1800s",
+                scope: "campaign_cardinality",
+                limit: 200,
+                retry_after_seconds: 1800,
+              },
+            },
+          ],
+        },
+      },
+    ]);
+    const anypost = new Anypost("ap_test", { fetch: m.fetch });
+
+    const res = await anypost.email.sendBatch({ emails: [SEND, SEND] });
+
+    const item = res.data[1]!;
+    expect(item.status).toBe("failed");
+    if (item.status === "failed" && item.error.type === "quota_exceeded") {
+      // Narrowing on `type` is what makes these reachable; reading them off
+      // the union without it is a compile error.
+      expect(item.error.scope).toBe("campaign_cardinality");
+      expect(item.error.limit).toBe(200);
+      expect(item.error.retry_after_seconds).toBe(1800);
+    } else {
+      throw new Error("expected a quota_exceeded failure");
+    }
+  });
 });
