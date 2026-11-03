@@ -100,6 +100,9 @@ export type {
 
 export type {
   Suppression,
+  SuppressionBatchInvalid,
+  SuppressionBatchItem,
+  SuppressionBatchResult,
   SuppressionCreateParams,
   SuppressionListParams,
   SuppressionOrigin,

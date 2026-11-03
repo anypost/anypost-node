@@ -37,6 +37,33 @@ describe("suppressions", () => {
     expect(req.body).toEqual({ email: "alice@example.com", topic: "marketing" });
   });
 
+  test("createBatch wraps the entries and returns the outcome counts", async () => {
+    const m = mockFetch([
+      {
+        status: 200,
+        body: { imported: 1, already_suppressed: 0, invalid: [{ index: 1, email: "not-an-address" }] },
+      },
+    ]);
+    const anypost = new Anypost("ap_test", { fetch: m.fetch });
+
+    const result = await anypost.suppressions.createBatch([
+      { email: "alice@example.com", topic: "marketing", reason: "hard bounce" },
+      { email: "not-an-address" },
+    ]);
+
+    expect(result.imported).toBe(1);
+    expect(result.invalid).toEqual([{ index: 1, email: "not-an-address" }]);
+    const req = m.calls[0]!;
+    expect(req.method).toBe("POST");
+    expect(req.url).toBe("https://api.anypost.com/v1/suppressions/batch");
+    expect(req.body).toEqual({
+      suppressions: [
+        { email: "alice@example.com", topic: "marketing", reason: "hard bounce" },
+        { email: "not-an-address" },
+      ],
+    });
+  });
+
   test("list passes filters as query params", async () => {
     const m = mockFetch([
       { status: 200, body: { data: [suppression()], has_more: false, next_cursor: null } },

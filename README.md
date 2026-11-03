@@ -212,6 +212,18 @@ await anypost.suppressions.create({
 await anypost.suppressions.delete("alice@example.com", "marketing");
 ```
 
+Add up to 1,000 at a time with `createBatch`, for example when moving a list over from another provider:
+
+```ts
+const result = await anypost.suppressions.createBatch([
+  { email: "alice@example.com", reason: "hard bounce" },
+  { email: "bob@example.com", topic: "marketing", reason: "unsubscribed" },
+]);
+// { imported: 2, already_suppressed: 0, invalid: [] }
+```
+
+Addresses already suppressed for that topic are counted in `already_suppressed` and left unchanged, so a batch is safe to retry. Invalid addresses come back in `invalid` with their position instead of failing the batch.
+
 `get`, `list` (with `email_contains`, `topic`, `reason`, and `origin` filters), `listForEmail`, and `deleteForEmail` round out the resource. See [Suppressions](https://anypost.com/docs/reference/suppressions) for scoping and the automatic-suppression rules for bounces and complaints.
 
 ## Webhooks
