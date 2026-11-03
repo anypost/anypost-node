@@ -1,6 +1,6 @@
 {
   "name": "anypost",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Official TypeScript SDK for the Anypost email API.",
   "license": "MIT",
   "homepage": "https://anypost.com",
