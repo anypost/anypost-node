@@ -28,7 +28,7 @@ export interface Suppression {
   note: string | null;
   /** When the suppression was first observed. */
   suppressed_at: string;
-  /** When it stops applying. `null` means never. Permanent bounces roll off after 90 days. */
+  /** Always `null`: suppressions do not expire. Kept for compatibility; removed in a future major version. */
   expires_at: string | null;
   created_at: string;
 }
@@ -50,4 +50,35 @@ export interface SuppressionCreateParams {
   topic?: string;
   /** Optional internal annotation, preserved across automatic re-suppressions. */
   note?: string | null;
+}
+
+/** One entry for `suppressions.createBatch`. */
+export interface SuppressionBatchItem {
+  email: string;
+  /** Topic to scope the suppression. Omit or `*` to block every topic. */
+  topic?: string;
+  /**
+   * `permanent_bounce`, `complaint`, `unsubscribed` or `manual`. Common
+   * equivalents (`hard bounce`, `spam report`, `opt-out`) are accepted;
+   * anything else, or no value, records `manual`.
+   */
+  reason?: string | null;
+  /** Optional internal annotation, preserved across automatic re-suppressions. */
+  note?: string | null;
+}
+
+/** An entry `suppressions.createBatch` rejected because its `email` is not a valid address. */
+export interface SuppressionBatchInvalid {
+  /** Position of the entry in the array sent. */
+  index: number;
+  email: string | null;
+}
+
+/** Response from `suppressions.createBatch`. The three outcomes add up to the entries sent. */
+export interface SuppressionBatchResult {
+  /** Suppressions this call created. */
+  imported: number;
+  /** Entries already suppressed for that topic, including repeats within the batch. */
+  already_suppressed: number;
+  invalid: SuppressionBatchInvalid[];
 }

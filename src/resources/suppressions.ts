@@ -3,6 +3,8 @@ import { Page, type PageResponse } from "../pagination.js";
 import type { RequestOptions } from "../types/common.js";
 import type {
   Suppression,
+  SuppressionBatchItem,
+  SuppressionBatchResult,
   SuppressionCreateParams,
   SuppressionListParams,
 } from "../types/suppression.js";
@@ -12,7 +14,7 @@ export class Suppressions {
   constructor(private readonly http: HttpClient) {}
 
   /**
-   * List the team's suppressions, newest-first. Expired rows are filtered out.
+   * List the team's suppressions, newest-first.
    * Returns one {@link Page}; iterate it with `for await` to walk every page.
    * Filter with `email_contains`, `topic`, `reason`, and `origin`.
    */
@@ -35,6 +37,25 @@ export class Suppressions {
       method: "POST",
       path: "/suppressions",
       body: params,
+      ...(options ? { options } : {}),
+    });
+  }
+
+  /**
+   * Add up to 1,000 suppressions in one call. An address already suppressed for
+   * the same topic is counted in `already_suppressed` and left unchanged, so a
+   * batch is safe to retry; an invalid address comes back in `invalid` instead
+   * of failing the batch. Throws `validation_error` (and adds nothing) if the
+   * batch would take the team past its suppression limit.
+   */
+  createBatch(
+    suppressions: SuppressionBatchItem[],
+    options?: RequestOptions,
+  ): Promise<SuppressionBatchResult> {
+    return this.http.request<SuppressionBatchResult>({
+      method: "POST",
+      path: "/suppressions/batch",
+      body: { suppressions },
       ...(options ? { options } : {}),
     });
   }
